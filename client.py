@@ -1,29 +1,90 @@
-# UNIVERSIDADE FEDERAL DO RIO GRANDE DO NORTE
-# DEPARTAMENTO DE ENGENHARIA DE COMPUTACAO E AUTOMACAO
-# DISCIPLINA REDES DE COMPUTADORES (DCA0113)
-# AUTOR: PROF. CARLOS M D VIEGAS (viegas 'at' dca.ufrn.br)
-#
-# SCRIPT: Cliente de sockets TCP modificado para enviar texto minusculo ao servidor e aguardar resposta em maiuscula
-#
-
-# importacao das bibliotecas
 from socket import *
+import re, json, threading, time
+from ast import literal_eval
+global conectado
+conectado = True 
+privado = False
+class recebeMsg (threading.Thread):
+    # redefine a funcao __init__ para aceitar a passagem parametros de entrada
+    def __init__(self,clientSocket):
+        threading.Thread.__init__(self)
+        self.client_Socket = clientSocket
+    # a funcao run() e executada por padrao por cada thread
+    def run(self):
+        global conectado
+        while conectado:
+            msg = self.client_Socket.recv(2048)
+            # Convertendo a string para um dicionario
+            protocoloRecebido = literal_eval(msg.decode('utf-8'))
+            if not privado:
+                print(protocoloRecebido['dados'].decode('utf-8'))
 
-# definicao das variaveis
+def getComando(comando):
+    comandoExtraido = comando[comando.find("(")+1:comando.find(")")]
+    comandoExtraido = comandoExtraido.replace("'","")
+    return comandoExtraido
+
+def getProtocolo(sentence, tamanhoMsg, ipUsuario, ipDestino, nickname):
+    if sentence[0:-1]==getComando(sentence):
+        return {
+            "tamanhoMsg": tamanhoMsg,
+            "enderecoIpOrigem": ipUsuario,
+            "enderecoDestino": ipDestino,
+            "nickNameDoUsuario": nickname.encode('utf-8'),
+            "comando": "",
+            "dados": sentence.encode('utf-8')
+        }
+    else:
+        return {
+            "tamanhoMsg": tamanhoMsg,
+            "enderecoIpOrigem": ipUsuario,
+            "enderecoDestino": ipDestino,
+            "nickNameDoUsuario": nickname.encode('utf-8'),
+            "comando": sentence.encode('utf-8'),
+            "dados": ""
+        }
+
+#definicao das variaveis
 serverName = 'localhost' # ip do servidor
 serverPort = 12000 # porta a se conectar
 clientSocket = socket(AF_INET,SOCK_STREAM) # criacao do socket TCP
 clientSocket.connect((serverName, serverPort)) # conecta o socket ao servidor
 
-modifiedSentence = clientSocket.recv(1024) # recebe do servidor a resposta
-print (modifiedSentence.decode('utf-8'))
+#Configurando nickname
+nickname = ""
+while nickname == "":
+    nickname = input("Por favor digite um nickname: ")
 
-while 1:
-    
+clientSocket.send(nickname.encode('utf-8'))
 
-    sentence = input('Digite o texto em letras minusculas: ')
-    clientSocket.send(sentence.encode('utf-8')) # envia o texto para o servidor
-    modifiedSentence = clientSocket.recv(1024) # recebe do servidor a resposta
-    print ('O servidor (\'%s\', %d) respondeu com: %s' % (serverName, serverPort, modifiedSentence.decode('utf-8')))
-clientSocket.close() # encerramento o socket do cliente
+ipUsuario = clientSocket.recv(2048).decode('utf-8')
+
+thread = recebeMsg(clientSocket)
+thread.start()
+
+comandoInvalido = True
+comandoSelecionado = ""
+try:
+    while conectado:
+        try:
+            sentence = input()
+            tamanhoMsg = len(sentence.encode('utf-8'))
+            protocoloDeEnvio = getProtocolo(sentence, tamanhoMsg, ipUsuario, serverName, nickname)
+            
+            if sentence.find('nome')==0:
+                print("você mudou seu nickname para " + getComando(sentence))
+                nickname = getComando(sentence)
+
+            clientSocket.send(str(protocoloDeEnvio).encode('utf-8')) # envia o texto para o servidor
+            if protocoloDeEnvio['comando'].decode('utf-8') == "sair()":
+                conectado = False
+                clientSocket.close()
+                break
+            
+        except:
+            time.sleep(0.05)
+finally:
+    clientSocket.close
+
+
 
