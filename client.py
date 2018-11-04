@@ -3,7 +3,7 @@ import re, json, threading, time
 from ast import literal_eval
 global conectado
 conectado = True 
-privado = False
+
 class recebeMsg (threading.Thread):
     # redefine a funcao __init__ para aceitar a passagem parametros de entrada
     def __init__(self,clientSocket):
@@ -14,10 +14,12 @@ class recebeMsg (threading.Thread):
         global conectado
         while conectado:
             msg = self.client_Socket.recv(2048)
+            msg = msg.decode('utf-8')
+            print(msg)
             # Convertendo a string para um dicionario
-            protocoloRecebido = literal_eval(msg.decode('utf-8'))
-            if not privado:
-                print(protocoloRecebido['dados'].decode('utf-8'))
+            protocoloRecebido = literal_eval(msg)
+
+            print(protocoloRecebido['dados'].decode('utf-8'))
 
 def getComando(comando):
     comandoExtraido = comando[comando.find("(")+1:comando.find(")")]
