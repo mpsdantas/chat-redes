@@ -99,48 +99,6 @@ def aguardaConexoes(connectionSocket):
 
                     enviarMensagens(clientes, nickname, protocoloEnvioMsg)
 
-                if stringComando.find('privado')==0:
-                    nickNamePrivado = getComando(stringComando)
-                    contador = 0
-                    usuarioEnviarPrivado = -1
-                    for clientesConectados in clientes:
-                        if str(clientesConectados['nickName']) == str(nickNamePrivado):
-                           usuarioEnviarPrivado = contador 
-                        contador = contador + 1
-                    if usuarioEnviarPrivado != -1:
-                        stringPrivado = nickname + " deseja iniciar uma sala privada com você, aceita: (digite sim para aceitar)"
-
-                        protocoloEnvioMsg = gerarProtocolo(len(stringPrivado),addr[0].encode('utf-8'),nickname,"privado",stringPrivado)
-
-                        clientes[usuarioEnviarPrivado]['socket'].send(str(protocoloEnvioMsg).encode('utf-8'))
-
-                        responseCliente = connectionSocket.recv(1024)
-                        print(responseCliente)
-                        responseCliente = responseCliente.decode('utf-8')
-
-                        protocoloDeResposta = literal_eval(responseCliente)
-                        print(protocoloDeResposta)
-                        if protocoloDeResposta['dados'].decode('utf8')=='sim':
-                            print('entrou')
-                            # clientes[usuarioEnviarPrivado]['socketPrivado'] = connectionSocket
-                            # clientes[usuarioEnviarPrivado]['privado'] = True
-                            # contadorUsuario = 0
-                            # meuUsuario = 0
-                            # for clientesConectados in clientes:
-                            #     if str(clientesConectados['nickName']) == str(nickname):
-                            #         meuUsuario = contador 
-                            #     contadorUsuario = contadorUsuario + 1
-                            # clientes[meuUsuario]['socketPrivado'] = clientes[usuarioEnviarPrivado]['socket']
-                            # clientes[meuUsuario]['privado'] = True
-                        else:
-                            protocoloEnvioMsg = gerarProtocolo(len(stringPrivado),addr[0].encode('utf-8'),nickname,"privado","Usuário não aceitou sua solicitação")
-
-                            connectionSocket.send(str(protocoloEnvioMsg).encode('utf-8'))
-                    else:
-                        protocoloEnvioMsg = gerarProtocolo(len(stringPrivado),addr[0].encode('utf-8'),nickname,"privado","NickName não foi encontrado")
-
-                        connectionSocket.send(str(protocoloEnvioMsg).encode('utf-8'))
-
                 if protocoloRecebido['comando'].decode('utf-8')=='lista()':
                     enviarListaDeUsuarios(clientes, connectionSocket, nickname, addr)
 

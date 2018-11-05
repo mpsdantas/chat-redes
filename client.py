@@ -15,7 +15,7 @@ class recebeMsg (threading.Thread):
         while conectado:
             msg = self.client_Socket.recv(2048)
             msg = msg.decode('utf-8')
-            print(msg)
+        
             # Convertendo a string para um dicionario
             protocoloRecebido = literal_eval(msg)
 
